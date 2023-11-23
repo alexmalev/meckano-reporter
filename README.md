@@ -11,6 +11,10 @@
 
 ```bash
 npm install
-npm run report
 ```
 
+### Fill Report
+
+```bash
+npm run report
+```
