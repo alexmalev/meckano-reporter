@@ -4,6 +4,21 @@ import { test, expect } from "@playwright/test";
 
 const logger = console;
 
+const hebrewMonths = [
+  "ינואר",
+  "פברואר",
+  "מרץ",
+  "אפריל",
+  "מאי",
+  "יוני",
+  "יולי",
+  "אוגוסט",
+  "ספטמבר",
+  "אוקטובר",
+  "נובמבר",
+  "דצמבר",
+];
+
 test("fill hours", async ({ page }) => {
   if (!process.env.USERNAME || !process.env.PASSWORD) {
     logger.error("Missing username or password in .env file");
@@ -22,6 +37,21 @@ test("fill hours", async ({ page }) => {
   logger.log("Navigating to attendance page");
   await page.locator("#li-monthly-employee-report").click();
   await page.locator(".employee-report").waitFor({ state: "visible" });
+
+  logger.log("validating that the month is correct");
+  const monthToFill = new Date().getMonth() + 1;
+  const reportMonth = await page
+    .locator(".report-select-date")
+    .first()
+    .locator(".sbSelector")
+    .innerText();
+
+  const reportMonthIndex = hebrewMonths.indexOf(reportMonth!);
+  if (monthToFill < reportMonthIndex) {
+    logger.log("Going back a month");
+    await page.locator(".arrowRight").click();
+    await page.locator(".employee-report").waitFor({ state: "visible" });
+  }
 
   const isDone = async () => {
     const reportedHours = await page.locator(".presence-hours").textContent();

@@ -1,5 +1,10 @@
 # Meckano Reporter
 
+##
+* The script will fill in the required dates based on the required hours for the current month, and will skip holidays etc. 
+* If the report already started a new month it will go back one month.
+* If vacations have been filled it will skip them.
+
 ## Setup
 
 ### Dependencies
