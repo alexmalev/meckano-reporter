@@ -1,4 +1,3 @@
-/* eslint-disable no-continue */
 /* eslint-disable no-await-in-loop */
 import { test, expect } from "@playwright/test";
 
@@ -39,7 +38,7 @@ test("fill hours", async ({ page }) => {
   await page.locator(".employee-report").waitFor({ state: "visible" });
 
   logger.log("validating that the month is correct");
-  const monthToFill = new Date().getMonth();
+  const monthToFill = new Date().getMonth() + 1;
   const reportMonth = await page
     .locator(".report-select-date")
     .first()
@@ -78,39 +77,50 @@ test("fill hours", async ({ page }) => {
   };
 
   logger.log("Performing magic");
-  while (!(await isDone())) {
-    const rowToFill = page
-      .locator("tr[data-report_data_id]", {
-        has: page.locator(".undertime", { hasText: ":" }),
-      })
-      .first();
-    const rowId = await rowToFill.locator(".employee-information").innerText();
-    const currentRow = page.locator("tr[data-report_data_id]", {
-      has: page.locator(".employee-information", { hasText: rowId }),
+
+  const startTime = "09:00";
+
+  const missingRowLocator = page.locator("tr[data-report_data_id]", {
+    has: page.locator("td.undertime", { hasText: ":" }),
+  });
+  const allRowsToFill = await missingRowLocator.all();
+
+  const datesToFill = await Promise.all(
+    allRowsToFill.map(async (row) => {
+      const missingHours = await row.locator("td.undertime").innerText();
+      const date = await row.locator(".employee-information").innerText();
+      return {
+        date,
+        endTime: calculateEndTime(startTime, missingHours),
+      };
+    }),
+  );
+
+  await page.locator(".free-reporting").click();
+
+  const reportLocator = page.locator(".hours-report");
+  await expect(reportLocator).toBeVisible();
+
+  // eslint-disable-next-line no-restricted-syntax
+  for (const { date, endTime } of datesToFill) {
+    const rowToFill = page.locator("tr", {
+      has: page.locator(".dateText", { hasText: date }),
     });
-    const missingHours = await currentRow.locator("td.undertime").innerText();
-    if (!missingHours) continue;
-
-    const startTime = "09:00";
-    const endTime = calculateEndTime(startTime, missingHours);
-
-    const startTimeTd = currentRow.locator("td.checkin");
-    await startTimeTd.locator("span.checkin").click();
-
-    const startTimeInput = startTimeTd.locator(".report-entry");
-    await startTimeInput.waitFor({ state: "visible" });
-    await startTimeInput.fill(startTime.replace(":", ""));
-    await startTimeInput.press("Enter");
-    await expect(startTimeTd.locator("span.checkin")).toHaveText(startTime);
-
-    const endTimeTd = currentRow.locator("td.checkout");
-    await endTimeTd.locator("span.checkout").click();
-
-    const endTimeInput = endTimeTd.locator(".report-entry");
-    await endTimeInput.waitFor({ state: "visible" });
-    await endTimeInput.fill(endTime.replace(":", ""));
-    await startTimeInput.press("Enter");
-    await expect(currentRow.locator("td.total-hours")).toHaveText(missingHours);
+    await rowToFill.locator("input.checkIn").fill(startTime.replace(":", ""));
+    await rowToFill.locator("input.checkOut").fill(endTime.replace(":", ""));
   }
+
+  await page.locator("button.update-freeReporting").click();
+
+  logger.log(
+    "Waiting for the report to be submitted. this will take a couple of seconds",
+  );
+
+  await expect(page.locator("#freeReporting-dialog")).toBeHidden({
+    timeout: 120000,
+  });
+
+  expect(await isDone()).toBeTruthy();
+
   logger.log(`Done!. Visit ${page.url()} to verify and lock the report`);
 });
