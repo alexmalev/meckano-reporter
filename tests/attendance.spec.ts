@@ -38,7 +38,7 @@ test("fill hours", async ({ page }) => {
   await page.locator(".employee-report").waitFor({ state: "visible" });
 
   logger.log("validating that the month is correct");
-  const monthToFill = new Date().getMonth() + 1;
+  const monthToFill = new Date().getMonth();
   const reportMonth = await page
     .locator(".report-select-date")
     .first()
