@@ -63,7 +63,7 @@ test("fill hours", async ({ page }) => {
     const [startHours, startMinutes] = startTime.split(":");
     const [missingHoursInt, missingMinutesInt] = missingHours
       .split(":")
-      .map((x) => Number(x));
+      .map((x) => Number(x.trim().replace("-", "")));
     const endTime = new Date(
       0,
       0,
@@ -110,14 +110,14 @@ test("fill hours", async ({ page }) => {
     await rowToFill.locator("input.checkOut").fill(endTime.replace(":", ""));
   }
 
-  await page.locator("button.update-freeReporting").click();
+  // await page.locator("button.update-freeReporting").click();
 
   logger.log(
     "Waiting for the report to be submitted. this will take a couple of seconds",
   );
 
   await expect(page.locator("#freeReporting-dialog")).toBeHidden({
-    timeout: 120000,
+    timeout: 240000,
   });
 
   expect(await isDone()).toBeTruthy();
