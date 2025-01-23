@@ -28,7 +28,7 @@ test("fill hours", async ({ page }) => {
   await page.goto("https://app.meckano.co.il");
 
   logger.log("Logging in");
-  await page.locator("#email").fill(process.env.USERNAME!);
+  await page.locator("input[name='email']").fill(process.env.USERNAME!);
   await page.locator("#password").fill(process.env.PASSWORD!);
   await page.locator("#submitButtons").getByRole("button").click();
   await page.waitForLoadState("networkidle");
